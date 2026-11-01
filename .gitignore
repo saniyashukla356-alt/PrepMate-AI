@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.dart_tool/
+.pub-cache/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea/
+.vscode/
+*.iml
+__pycache__/
+*.pyc
+venv/
+.venv/
+.DS_Store
+Thumbs.db
