@@ -1,16 +1,72 @@
+import 'dart:async';
+import 'screens/reset_password_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login_screen.dart';
 
-void main() {
+const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+const supabasePublishableKey = String.fromEnvironment(
+  'SUPABASE_PUBLISHABLE_KEY',
+);
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: supabaseUrl,
+    publishableKey: supabasePublishableKey,
+  );
+
   runApp(const PrepMateApp());
 }
 
-class PrepMateApp extends StatelessWidget {
+final GlobalKey<NavigatorState> navigatorKey =
+    GlobalKey<NavigatorState>();
+
+class PrepMateApp extends StatefulWidget {
   const PrepMateApp({super.key});
+
+  @override
+  State<PrepMateApp> createState() => _PrepMateAppState();
+}
+
+class _PrepMateAppState extends State<PrepMateApp> {
+  late final StreamSubscription<AuthState> authSubscription;
+  bool isOpeningResetScreen = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    authSubscription =
+        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (data.event == AuthChangeEvent.passwordRecovery &&
+          !isOpeningResetScreen) {
+        isOpeningResetScreen = true;
+
+        navigatorKey.currentState
+            ?.push(
+          MaterialPageRoute(
+            builder: (_) => const ResetPasswordScreen(),
+          ),
+        )
+            .then((_) {
+          isOpeningResetScreen = false;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    authSubscription.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'PrepMate AI',
       theme: ThemeData(
@@ -54,7 +110,11 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFF8F6FF), Color(0xFFE9E2FF), Color(0xFFF1EEFF)],
+            colors: [
+              Color(0xFFF8F6FF),
+              Color(0xFFE9E2FF),
+              Color(0xFFF1EEFF),
+            ],
           ),
         ),
         child: SafeArea(
@@ -78,9 +138,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 child: const Center(child: PrepMateLogo()),
               ),
-
               const SizedBox(height: 30),
-
               RichText(
                 text: const TextSpan(
                   children: [
@@ -103,9 +161,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 10),
-
               const Text(
                 'Your AI-Powered Career Companion',
                 textAlign: TextAlign.center,
@@ -115,9 +171,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   letterSpacing: 0.3,
                 ),
               ),
-
               const SizedBox(height: 55),
-
               const SizedBox(
                 height: 28,
                 width: 28,
@@ -126,9 +180,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: Color(0xFF7651F5),
                 ),
               ),
-
               const SizedBox(height: 15),
-
               const Text(
                 'Preparing your future...',
                 style: TextStyle(fontSize: 13, color: Color(0xFF77708F)),
@@ -170,14 +222,11 @@ class PrepMateLogo extends StatelessWidget {
               ),
             ),
           ),
-
           const Positioned(
             top: 2,
             child: Icon(Icons.school, size: 46, color: Color(0xFF24136F)),
           ),
-
           Positioned.fill(child: CustomPaint(painter: LogoOrbitPainter())),
-
           const Positioned(
             right: 3,
             top: 32,
@@ -231,9 +280,7 @@ class WelcomeScreen extends StatelessWidget {
                 size: 65,
                 color: Color(0xFF7651F5),
               ),
-
               const SizedBox(height: 25),
-
               const Text(
                 'Welcome to PrepMate AI!',
                 textAlign: TextAlign.center,
@@ -243,9 +290,7 @@ class WelcomeScreen extends StatelessWidget {
                   color: Color(0xFF21164D),
                 ),
               ),
-
               const SizedBox(height: 12),
-
               const Text(
                 'Your journey towards your dream career starts here.',
                 textAlign: TextAlign.center,

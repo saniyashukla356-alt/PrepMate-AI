@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'signup_screen.dart';
-
+import 'home_screen.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -13,12 +14,79 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
 
   bool isPasswordVisible = false;
+  bool isLoading = false;
 
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> login() async {
+    final email = emailController.text.trim().toLowerCase();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      showMessage('Please enter your email and password.');
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+if (!mounted) return;
+
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (context) => const HomeScreen(),
+  ),
+);
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      showMessage(error.message);
+    } catch (_) {
+      if (!mounted) return;
+      showMessage('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+Future<void> resetPassword() async {
+  final email = emailController.text.trim().toLowerCase();
+
+  if (email.isEmpty) {
+    showMessage('Please enter your email address first.');
+    return;
+  }
+
+  try {
+    await Supabase.instance.client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: 'io.supabase.prepmate://reset-password',
+    );
+
+    if (!mounted) return;
+    showMessage('Password reset email sent. Please check your inbox.');
+  } on AuthException catch (error) {
+    if (!mounted) return;
+    showMessage(error.message);
+  } catch (_) {
+    if (!mounted) return;
+    showMessage('Unable to send reset email. Please try again.');
+  }
+}
+  void showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -33,7 +101,6 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 35),
-
                 Center(
                   child: Column(
                     children: [
@@ -67,9 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 55),
-
                 const Text(
                   'Welcome Back!',
                   style: TextStyle(
@@ -78,23 +143,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 const Text(
                   'Login to continue your career journey.',
                   style: TextStyle(color: Colors.white60, fontSize: 15),
                 ),
-
                 const SizedBox(height: 32),
-
                 const Text(
                   'Email Address',
                   style: TextStyle(color: Colors.white),
                 ),
-
                 const SizedBox(height: 10),
-
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -114,13 +173,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 22),
-
                 const Text('Password', style: TextStyle(color: Colors.white)),
-
                 const SizedBox(height: 10),
-
                 TextField(
                   controller: passwordController,
                   obscureText: !isPasswordVisible,
@@ -153,33 +208,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: isLoading ? null : resetPassword,
                     child: const Text(
                       'Forgot Password?',
                       style: TextStyle(color: Color(0xFF8B80FF)),
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Login authentication coming soon!'),
-                        ),
-                      );
-                    },
+                    onPressed: isLoading ? null : login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6558E8),
                       foregroundColor: Colors.white,
@@ -187,18 +232,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: const Text(
-                      'Login',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            'Login',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
-
                 const SizedBox(height: 28),
-
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -227,7 +272,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 25),
               ],
             ),
